@@ -8,13 +8,22 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="auth-container">
-    <h2>Login</h2>
-    <input type="email" id="login-email" placeholder="Email" required />
-    <input type="password" id="login-password" placeholder="Password" required />
-    <button id="login-btn">Login</button>
-    <p><a href="reset.html">Forgot Password?</a></p>
-    <p>Don't have an account? <a href="signup.html">Sign up</a></p>
+  <div class="login-page">
+    <div class="login-card">
+      <img src="icon.png" alt="Milk Icon" class="login-icon" />
+      <h2>Sign in to your account</h2>
+      <input type="email" id="login-email" placeholder="Email address" required />
+
+      <div class="password-wrapper">
+        <input type="password" id="login-password" placeholder="Password" required />
+        <span id="toggle-password">👁️</span>
+      </div>
+
+      <button id="login-btn">Sign in</button>
+
+      <p><a href="reset.html">Forgot your password?</a></p>
+      <p>Don't have an account? <a href="signup.html">Sign up</a></p>
+    </div>
   </div>
 
   <script type="module">
@@ -34,6 +43,11 @@
       } catch (e) {
         alert("Login failed: " + e.message);
       }
+    });
+
+    document.getElementById("toggle-password").addEventListener("click", () => {
+      const passwordInput = document.getElementById("login-password");
+      passwordInput.type = passwordInput.type === "password" ? "text" : "password";
     });
   </script>
 </body>
