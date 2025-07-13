@@ -148,14 +148,28 @@ body {
   box-shadow: 0 0 10px rgba(0,0,0,0.05);
 }
 
+.form-card h2 {
+  margin-top: 0;
+  font-size: 1.2rem;
+}
+
 .form-card input,
-.analytics-card input {
+.analytics-card input,
+#entry-datetime {
   width: 100%;
   padding: 10px 12px;
   margin-bottom: 1rem;
   font-size: 1rem;
   border-radius: 6px;
   border: 1px solid #ccc;
+}
+
+#calculated-amount {
+  font-weight: bold;
+  font-size: 1.1rem;
+  color: #2e7d32;
+  margin-bottom: 1rem;
+  display: inline-block;
 }
 
 .form-card button {
