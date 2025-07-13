@@ -8,10 +8,11 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="login-page">
-    <div class="login-card">
-      <img src="icon.png" alt="Milk Icon" class="login-icon" />
+  <div class="auth-page">
+    <div class="auth-card">
+      <img src="icon.png" alt="Milk Icon" class="auth-icon" />
       <h2>Sign in to your account</h2>
+
       <input type="email" id="login-email" placeholder="Email address" required />
 
       <div class="password-wrapper">
@@ -37,6 +38,7 @@
     document.getElementById("login-btn").addEventListener("click", async () => {
       const email = document.getElementById("login-email").value;
       const password = document.getElementById("login-password").value;
+
       try {
         await signInWithEmailAndPassword(auth, email, password);
         window.location.href = "index.html";
