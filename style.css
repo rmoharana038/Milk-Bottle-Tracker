@@ -41,54 +41,31 @@ body {
   height: 32px;
 }
 
-/* Profile Dropdown */
-.profile-dropdown {
-  position: relative;
-}
-
-#profile-btn {
-  background: none;
-  border: none;
-  color: white;
-  font-weight: 500;
-  font-size: 1rem;
-  cursor: pointer;
+/* User Info Inline (Instead of Dropdown) */
+.user-inline {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 1rem;
+  font-weight: 500;
 }
 
-.arrow-down {
-  font-size: 0.8rem;
+.user-inline .user-name {
+  font-size: 1rem;
+  color: white;
 }
 
-.dropdown-content {
-  display: none;
-  position: absolute;
-  top: 120%;
-  right: 0;
-  background-color: white;
-  min-width: 120px;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+.logout-inline-btn {
+  background-color: #ffffff;
+  color: #2196f3;
+  border: none;
+  padding: 6px 12px;
   border-radius: 6px;
-  overflow: hidden;
-  z-index: 1000;
+  font-weight: bold;
+  cursor: pointer;
 }
 
-.dropdown-content a {
-  color: #333;
-  padding: 10px 12px;
-  text-decoration: none;
-  display: block;
-  font-size: 0.95rem;
-}
-
-.dropdown-content a:hover {
-  background-color: #f2f2f2;
-}
-
-.profile-dropdown:hover .dropdown-content {
-  display: block;
+.logout-inline-btn:hover {
+  background-color: #f0f0f0;
 }
 
 /* Dashboard Layout */
@@ -321,7 +298,13 @@ table th {
     width: 100%;
   }
 
-  #profile-btn {
-    font-size: 0.9rem;
+  .user-inline {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.3rem;
+  }
+
+  .logout-inline-btn {
+    width: 100%;
   }
 }
