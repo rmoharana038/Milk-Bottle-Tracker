@@ -8,9 +8,9 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="login-page">
-    <div class="login-card">
-      <img src="icon.png" alt="Milk Icon" class="login-icon" />
+  <div class="auth-page">
+    <div class="auth-card">
+      <img src="icon.png" alt="Milk Icon" class="auth-icon" />
       <h2>Create your account</h2>
 
       <input type="text" id="signup-name" placeholder="Full Name" required />
@@ -46,7 +46,6 @@
         const userCred = await createUserWithEmailAndPassword(auth, email, password);
         await updateProfile(userCred.user, { displayName: name });
 
-        // Save user profile to Firestore
         await setDoc(doc(db, "users", userCred.user.uid), {
           fullName: name,
           email: email,
