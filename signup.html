@@ -8,34 +8,60 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="auth-container">
-    <h2>Sign Up</h2>
-    <input type="text" id="signup-name" placeholder="Full Name" required />
-    <input type="email" id="signup-email" placeholder="Email" required />
-    <input type="password" id="signup-password" placeholder="Password" required />
-    <button id="signup-btn">Sign Up</button>
-    <p>Already have an account? <a href="login.html">Login</a></p>
+  <div class="login-page">
+    <div class="login-card">
+      <img src="icon.png" alt="Milk Icon" class="login-icon" />
+      <h2>Create your account</h2>
+
+      <input type="text" id="signup-name" placeholder="Full Name" required />
+      <input type="email" id="signup-email" placeholder="Email address" required />
+
+      <div class="password-wrapper">
+        <input type="password" id="signup-password" placeholder="Password" required />
+        <span id="toggle-password">👁️</span>
+      </div>
+
+      <button id="signup-btn">Sign up</button>
+
+      <p>Already have an account? <a href="login.html">Sign in</a></p>
+    </div>
   </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getAuth, createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
     import config from "./firebase-config.js";
 
     const app = initializeApp(config);
     const auth = getAuth();
+    const db = getFirestore();
 
     document.getElementById("signup-btn").addEventListener("click", async () => {
       const name = document.getElementById("signup-name").value;
       const email = document.getElementById("signup-email").value;
       const password = document.getElementById("signup-password").value;
+
       try {
         const userCred = await createUserWithEmailAndPassword(auth, email, password);
         await updateProfile(userCred.user, { displayName: name });
+
+        // Save user profile to Firestore
+        await setDoc(doc(db, "users", userCred.user.uid), {
+          fullName: name,
+          email: email,
+          createdAt: new Date().toISOString()
+        });
+
         window.location.href = "index.html";
       } catch (e) {
         alert("Signup failed: " + e.message);
       }
+    });
+
+    document.getElementById("toggle-password").addEventListener("click", () => {
+      const pwInput = document.getElementById("signup-password");
+      pwInput.type = pwInput.type === "password" ? "text" : "password";
     });
   </script>
 </body>
