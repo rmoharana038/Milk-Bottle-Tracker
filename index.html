@@ -7,48 +7,93 @@
   <title>Milk Bottle Tracker</title>
   <link rel="stylesheet" href="style.css" />
   <link rel="manifest" href="manifest.json" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-  <header>
-    <h1>Milk Bottle Tracker</h1>
-    <div id="user-info">
-      <span id="user-name"></span>
-      <button id="logout-btn">Logout</button>
+  <header class="app-header">
+    <div class="brand">
+      <img src="icon.png" alt="Milk Bottle Icon" class="logo" />
+      <div>
+        <h1>Milk Bottle Tracker</h1>
+        <p>Professional dairy management</p>
+      </div>
+    </div>
+    <div class="profile-dropdown">
+      <button id="profile-btn">
+        <span id="user-name"></span>
+        <span class="arrow-down">▼</span>
+      </button>
+      <div class="dropdown-content" id="dropdown-menu">
+        <a href="#" id="logout-btn">Logout</a>
+      </div>
     </div>
   </header>
 
-  <section id="dashboard">
-    <div id="summary">
-      <p>Month: <span id="current-month"></span></p>
-      <p>Total Entries: <span id="total-entries">0</span></p>
-      <p>Total Bottles: <span id="total-bottles">0</span></p>
-      <p>Total Amount: ₹<span id="total-amount">0</span></p>
-    </div>
+  <main class="dashboard">
+    <section class="cards">
+      <div class="card">
+        <p class="label">Total Entries</p>
+        <h3 id="total-entries">0</h3>
+        <small><span id="entry-diff">↑ 0%</span> from last month</small>
+      </div>
+      <div class="card">
+        <p class="label">Total Bottles</p>
+        <h3 id="total-bottles">0</h3>
+        <small><span id="bottle-diff">↑ 0%</span> from last month</small>
+      </div>
+      <div class="card">
+        <p class="label">Total Amount</p>
+        <h3>₹<span id="total-amount">0</span></h3>
+        <small><span id="amount-diff">↑ 0%</span> from last month</small>
+      </div>
+      <div class="card">
+        <p class="label">Avg. per Day</p>
+        <h3><span id="avg-per-day">0</span></h3>
+        <small>bottles/day</small>
+      </div>
+    </section>
 
-    <div id="entry-form">
-      <input type="number" id="bottle-count" placeholder="No. of bottles" min="1" />
-      <button id="add-entry">Add Entry</button>
-    </div>
+    <section class="entry-section">
+      <div class="form-card">
+        <h2>Quick Add Entry</h2>
+        <input type="number" id="bottle-count" placeholder="Enter bottle count" min="1" />
+        <input type="datetime-local" id="entry-datetime" />
+        <p>Calculated Amount: ₹<span id="calculated-amount">0</span></p>
+        <button id="add-entry">➕ Add Entry</button>
+      </div>
 
-    <div id="actions">
-      <button id="export-excel">Export to Excel</button>
-      <button id="export-pdf">Export to PDF</button>
-      <button id="clear-all">Clear All</button>
-    </div>
+      <div class="analytics-card">
+        <h2>Usage Analytics</h2>
+        <div class="tab-buttons">
+          <button class="tab-btn active" data-range="7">7 Days</button>
+          <button class="tab-btn" data-range="30">30 Days</button>
+          <button class="tab-btn" data-range="90">90 Days</button>
+        </div>
+        <canvas id="analyticsChart"></canvas>
+      </div>
+    </section>
 
-    <table>
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Time</th>
-          <th>Bottles</th>
-          <th>Amount</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody id="entry-list"></tbody>
-    </table>
-  </section>
+    <section class="table-section">
+      <h2>Recent Entries</h2>
+      <div class="table-actions">
+        <input type="text" id="search-input" placeholder="Search entries..." />
+        <button id="export-excel" class="excel-btn">📗 Excel</button>
+        <button id="export-pdf" class="pdf-btn">📕 PDF</button>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Date & Time</th>
+            <th>Bottles</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="entry-list"></tbody>
+      </table>
+    </section>
+  </main>
 
   <script type="module" src="script.js"></script>
 </body>
