@@ -1,5 +1,5 @@
 // service-worker.js
-const CACHE_NAME = "milk-bottle-tracker-cache-v1";
+const CACHE_NAME = "milk-bottle-tracker-cache-v2"; // 🔁 Bump this on every change
 const FILES_TO_CACHE = [
   "/",
   "/index.html",
@@ -13,6 +13,7 @@ const FILES_TO_CACHE = [
   "/reset.html"
 ];
 
+// Cache on install
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
@@ -21,6 +22,22 @@ self.addEventListener("install", (event) => {
   );
 });
 
+// Clean up old caches
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    caches.keys().then((keyList) =>
+      Promise.all(
+        keyList.map((key) => {
+          if (key !== CACHE_NAME) {
+            return caches.delete(key);
+          }
+        })
+      )
+    )
+  );
+});
+
+// Serve from cache first
 self.addEventListener("fetch", (event) => {
   event.respondWith(
     caches.match(event.request).then((response) => {
