@@ -1,4 +1,4 @@
-// script.js - Milk Bottle Tracker with Chart, PDF & Styled Excel Export
+// script.js - Milk Bottle Tracker: Hybrid version with Firebase + Offline + Chart + Export
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
@@ -19,12 +19,11 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import firebaseConfig from "./firebase-config.js";
 
-// Firebase init
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// DOM elements
+// DOM Elements
 const bottleInput = document.getElementById("bottle-count");
 const addEntryBtn = document.getElementById("add-entry");
 const entryList = document.getElementById("entry-list");
@@ -37,25 +36,15 @@ const calculatedAmount = document.getElementById("calculated-amount");
 const entryDatetimeInput = document.getElementById("entry-datetime");
 const exportExcelBtn = document.getElementById("export-excel");
 const exportPdfBtn = document.getElementById("export-pdf");
-const avgPerDaySpan = document.getElementById("avg-per-day");
+const avgPerDay = document.getElementById("avg-per-day");
+const chartCanvas = document.getElementById("analyticsChart");
+const tabButtons = document.querySelectorAll(".tab-btn");
 
 let currentUser = null;
 let localDB = null;
-let allEntries = [];
+let chart;
 
-const chartCanvas = document.getElementById("analyticsChart");
-let analyticsChart;
-const tabButtons = document.querySelectorAll(".tab-btn");
-
-tabButtons.forEach(btn => {
-  btn.addEventListener("click", () => {
-    tabButtons.forEach(b => b.classList.remove("active"));
-    btn.classList.add("active");
-    renderChart(parseInt(btn.dataset.range));
-  });
-});
-
-// IndexedDB setup
+// ------------------ IndexedDB Setup ------------------
 const openDB = indexedDB.open("MilkTrackerDB", 1);
 openDB.onupgradeneeded = e => {
   localDB = e.target.result;
@@ -72,19 +61,18 @@ function saveToIndexedDB(entry) {
 }
 
 function checkPendingSync() {
-  if (!navigator.onLine || !currentUser || !localDB) return;
   const tx = localDB.transaction("entries", "readwrite");
   const store = tx.objectStore("entries");
   const getAll = store.getAll();
   getAll.onsuccess = async () => {
-    const items = getAll.result;
-    for (const item of items) {
+    for (const item of getAll.result) {
       await addDoc(collection(db, "users", currentUser.uid, "entries"), item);
       store.delete(item.id);
     }
   };
 }
 
+// ------------------ Auth State ------------------
 onAuthStateChanged(auth, user => {
   if (user) {
     currentUser = user;
@@ -96,6 +84,7 @@ onAuthStateChanged(auth, user => {
   }
 });
 
+// ------------------ Entry Logic ------------------
 bottleInput?.addEventListener("input", () => {
   const bottles = parseInt(bottleInput.value);
   calculatedAmount.textContent = bottles > 0 ? bottles * 25 : 0;
@@ -124,20 +113,20 @@ addEntryBtn?.addEventListener("click", async () => {
   calculatedAmount.textContent = "0";
 });
 
+// ------------------ Entry Listener & Analytics ------------------
 function listenToEntries() {
-  const q = query(
-    collection(db, "users", currentUser.uid, "entries"),
-    orderBy("timestamp", "desc")
-  );
+  const q = query(collection(db, "users", currentUser.uid, "entries"), orderBy("timestamp", "desc"));
   onSnapshot(q, snapshot => {
+    const entries = [];
     entryList.innerHTML = "";
-    allEntries = [];
     let totalEntries = 0, totalBottles = 0, totalAmount = 0;
 
     snapshot.forEach(docSnap => {
       const data = docSnap.data();
       const id = docSnap.id;
       const dt = new Date(data.timestamp);
+      entries.push({ ...data, timestamp: dt });
+
       const dateStr = dt.toLocaleDateString();
       const timeStr = dt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
@@ -151,7 +140,6 @@ function listenToEntries() {
       `;
       entryList.appendChild(row);
 
-      allEntries.push({ ...data, timestamp: new Date(data.timestamp) });
       totalEntries++;
       totalBottles += data.bottles;
       totalAmount += data.amount;
@@ -160,13 +148,8 @@ function listenToEntries() {
     totalEntriesSpan.textContent = totalEntries;
     totalBottlesSpan.textContent = totalBottles;
     totalAmountSpan.textContent = totalAmount;
-
-    const days = allEntries.length
-      ? Math.ceil((new Date() - allEntries[allEntries.length - 1].timestamp) / (1000 * 60 * 60 * 24)) || 1
-      : 1;
-    avgPerDaySpan.textContent = (totalBottles / days).toFixed(1);
-
-    renderChart(7);
+    renderChart(entries, 7); // default 7-day view
+    calculateAverage(entries);
   });
 }
 
@@ -196,49 +179,176 @@ entryList.addEventListener("click", async e => {
   }
 });
 
-logoutBtn?.addEventListener("click", () => {
-  signOut(auth);
-});
+logoutBtn?.addEventListener("click", () => signOut(auth));
 
-function renderChart(days) {
-  if (!chartCanvas) return;
-  const dateMap = {};
-  const cutoff = new Date();
-  cutoff.setDate(cutoff.getDate() - days + 1);
+// ------------------ Chart.js Analytics ------------------
+tabButtons.forEach(btn =>
+  btn.addEventListener("click", () => {
+    document.querySelector(".tab-btn.active")?.classList.remove("active");
+    btn.classList.add("active");
+    const days = parseInt(btn.dataset.range);
+    fetchAnalytics(days);
+  })
+);
 
-  for (const entry of allEntries) {
-    const date = entry.timestamp.toLocaleDateString();
-    if (entry.timestamp >= cutoff) {
-      dateMap[date] = (dateMap[date] || 0) + entry.bottles;
-    }
-  }
+function fetchAnalytics(days) {
+  const q = query(collection(db, "users", currentUser.uid, "entries"), orderBy("timestamp", "desc"));
+  onSnapshot(q, snapshot => {
+    const entries = [];
+    snapshot.forEach(docSnap => {
+      const data = docSnap.data();
+      const dt = new Date(data.timestamp);
+      if (Date.now() - dt.getTime() <= days * 86400000) {
+        entries.push({ ...data, timestamp: dt });
+      }
+    });
+    renderChart(entries, days);
+  });
+}
 
-  const labels = Object.keys(dateMap).sort((a, b) => new Date(a) - new Date(b));
-  const data = labels.map(label => dateMap[label]);
+function renderChart(entries, days) {
+  const dailyData = {};
+  entries.forEach(({ timestamp, bottles }) => {
+    const date = timestamp.toLocaleDateString();
+    dailyData[date] = (dailyData[date] || 0) + bottles;
+  });
 
-  if (analyticsChart) analyticsChart.destroy();
+  const labels = Object.keys(dailyData).slice(-days);
+  const values = labels.map(date => dailyData[date]);
 
-  analyticsChart = new Chart(chartCanvas, {
+  if (chart) chart.destroy();
+  chart = new Chart(chartCanvas, {
     type: "bar",
     data: {
       labels,
       datasets: [{
-        label: "Bottles per Day",
-        data,
-        backgroundColor: "#4CAF50"
+        label: "Bottles Used",
+        data: values,
+        backgroundColor: "#2196f3"
       }]
     },
     options: {
       responsive: true,
       plugins: {
-        legend: { display: false },
-        tooltip: { callbacks: { label: ctx => `${ctx.raw} bottles` } }
+        legend: { display: false }
       },
       scales: {
-        y: { beginAtZero: true, ticks: { precision: 0 } }
+        y: { beginAtZero: true }
       }
     }
   });
 }
 
-// Export functions can be added here if not yet included, or re-integrated next step
+function calculateAverage(entries) {
+  if (entries.length === 0) return avgPerDay.textContent = "0";
+  const dates = [...new Set(entries.map(e => e.timestamp.toDateString()))];
+  const total = entries.reduce((sum, e) => sum + e.bottles, 0);
+  avgPerDay.textContent = (total / dates.length).toFixed(1);
+}
+
+// ------------------ Excel Export ------------------
+exportExcelBtn?.addEventListener("click", () => {
+  const now = new Date();
+  const dateStr = now.toLocaleString("en-IN", {
+    weekday: "long", day: "numeric", month: "long",
+    year: "numeric", hour: "2-digit", minute: "2-digit"
+  });
+
+  const rows = [
+    ["🥛 Milk Bottle Tracker — Monthly Report"], [], [`Generated: ${dateStr}`], [],
+    [`Total Bottles: ${totalBottlesSpan.textContent}`, `Total Amount: ₹${totalAmountSpan.textContent}`],
+    [], ["Date & Time", "Bottles", "Amount", "Status"]
+  ];
+
+  document.querySelectorAll("#entry-list tr").forEach(tr => {
+    const tds = tr.querySelectorAll("td");
+    if (tds.length >= 4) {
+      const date = tds[0].innerText.trim();
+      const bottles = tds[1].querySelector("input")?.value || "";
+      const amount = tds[2].innerText.split("\n")[0].trim();
+      const status = tds[3].innerText.trim();
+      rows.push([date, bottles, amount, status]);
+    }
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Monthly Report");
+
+  const headerStyle = {
+    font: { bold: true, color: { rgb: "FFFFFF" } },
+    fill: { fgColor: { rgb: "4CAF50" } },
+    alignment: { horizontal: "center" }
+  };
+  ["A7", "B7", "C7", "D7"].forEach(cell => {
+    if (ws[cell]) ws[cell].s = headerStyle;
+  });
+
+  const borderStyle = { style: "thin", color: { rgb: "CCCCCC" } };
+  const range = XLSX.utils.decode_range(ws["!ref"]);
+  for (let R = range.s.r; R <= range.e.r; R++) {
+    for (let C = 0; C <= 3; C++) {
+      const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
+      const cell = ws[cellRef];
+      if (cell) {
+        cell.s = cell.s || {};
+        cell.s.border = {
+          top: borderStyle,
+          bottom: borderStyle,
+          left: borderStyle,
+          right: borderStyle
+        };
+      }
+    }
+  }
+
+  ws["!cols"] = [{ wch: 28 }, { wch: 10 }, { wch: 15 }, { wch: 12 }];
+  XLSX.writeFile(wb, "Milk_Bottle_Tracker_Report.xlsx");
+});
+
+// ------------------ PDF Export ------------------
+exportPdfBtn?.addEventListener("click", () => {
+  const logoURL = "https://rmoharana038.github.io/Milk-Bottle-Tracker/icon.png";
+  const now = new Date();
+  const formattedDate = now.toLocaleString("en-IN", {
+    weekday: "long", day: "numeric", month: "long",
+    year: "numeric", hour: "2-digit", minute: "2-digit"
+  });
+
+  const table = document.querySelector("table")?.cloneNode(true);
+  if (table) {
+    table.querySelectorAll("th:last-child, td:last-child").forEach(el => el.remove());
+  }
+
+  const summary = `
+    <p><strong>Total Bottles:</strong> ${totalBottlesSpan.textContent} |
+       <strong>Total Amount:</strong> ₹${totalAmountSpan.textContent}</p>
+  `;
+
+  const win = window.open("", "", "width=900,height=700");
+  win.document.write(`
+    <html><head><title>Milk Bottle Tracker</title>
+    <style>
+      body { font-family: Arial; padding: 20px; }
+      h2 { color: #2c3e50; }
+      table { border-collapse: collapse; width: 100%; }
+      table, th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+      th { background: #f0f0f0; }
+    </style></head>
+    <body>
+      <img src="${logoURL}" alt="Logo" style="height: 60px" />
+      <h2>🥛 Milk Bottle Tracker — Monthly Report</h2>
+      <p><strong>Generated:</strong> ${formattedDate}</p>
+      ${summary}
+      ${table?.outerHTML || ""}
+    </body>
+    </html>
+  `);
+  win.document.close();
+  win.print();
+});
+
+// ------------------ Online Sync ------------------
+window.addEventListener("online", () => {
+  if (currentUser && localDB) checkPendingSync();
+});
