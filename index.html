@@ -7,6 +7,8 @@
   <title>Milk Bottle Tracker</title>
   <link rel="stylesheet" href="style.css" />
   <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icon.png" type="image/png" />
+  <meta name="theme-color" content="#2196f3" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
@@ -91,5 +93,15 @@
   </main>
 
   <script type="module" src="script.js"></script>
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker
+          .register("sw.js")
+          .then(() => console.log("✅ Service Worker Registered"))
+          .catch(err => console.error("Service Worker registration failed:", err));
+      });
+    }
+  </script>
 </body>
 </html>
