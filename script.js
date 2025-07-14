@@ -1,4 +1,4 @@
-// script.js - Milk Bottle Tracker with Enhanced Export (PDF/Excel using SheetJS + IndexedDB Sync)
+// script.js - Milk Bottle Tracker with Enhanced PDF/XLSX Export & IndexedDB Sync
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
@@ -39,7 +39,6 @@ const exportPdfBtn = document.getElementById("export-pdf");
 let currentUser = null;
 let localDB = null;
 
-// IndexedDB Setup
 const openDB = indexedDB.open("MilkTrackerDB", 1);
 openDB.onupgradeneeded = e => {
   localDB = e.target.result;
@@ -108,10 +107,7 @@ addEntryBtn?.addEventListener("click", async () => {
 });
 
 function listenToEntries() {
-  const q = query(
-    collection(db, "users", currentUser.uid, "entries"),
-    orderBy("timestamp", "desc")
-  );
+  const q = query(collection(db, "users", currentUser.uid, "entries"), orderBy("timestamp", "desc"));
   onSnapshot(q, snapshot => {
     entryList.innerHTML = "";
     let totalEntries = 0, totalBottles = 0, totalAmount = 0;
@@ -170,83 +166,95 @@ entryList.addEventListener("click", async e => {
   }
 });
 
-logoutBtn?.addEventListener("click", () => {
-  signOut(auth);
-});
+logoutBtn?.addEventListener("click", () => signOut(auth));
 
-// ✅ XLSX Export using SheetJS
+// 🟢 Export as XLSX using SheetJS
 exportExcelBtn?.addEventListener("click", () => {
-  const table = document.querySelector("table");
-  const ws = XLSX.utils.table_to_sheet(table);
-
-  // Custom summary row
-  const summaryRow = [
-    "Summary", "",
-    `Total Bottles: ${totalBottlesSpan.textContent}`,
-    `Total Amount: ₹${totalAmountSpan.textContent}`
-  ];
-  XLSX.utils.sheet_add_aoa(ws, [summaryRow], { origin: -1 });
-
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Milk Tracker");
-
-  const now = new Date().toLocaleString("en-IN", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit"
+  const rows = [...document.querySelectorAll("#entry-list tr")];
+  const ws_data = [["Date", "Bottles", "Amount", "Status"]];
+  rows.forEach(row => {
+    const cells = row.querySelectorAll("td");
+    if (cells.length >= 4) {
+      const date = cells[0].innerText;
+      const bottles = cells[1].querySelector("input")?.value || "";
+      const amount = cells[2].innerText;
+      const status = cells[3].innerText;
+      ws_data.push([date, bottles, amount, status]);
+    }
   });
 
-  XLSX.writeFile(wb, `Milk_Bottle_Tracker_Report_${now.replace(/[^\w]/g, "_")}.xlsx`);
+  const now = new Date();
+  const formattedDate = now.toLocaleString("en-IN", {
+    weekday: "long", day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit"
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet([]);
+  XLSX.utils.sheet_add_aoa(ws, [["Milk Bottle Tracker Report"]], { origin: "A1" });
+  XLSX.utils.sheet_add_aoa(ws, [[`Generated: ${formattedDate}`]], { origin: "A2" });
+  XLSX.utils.sheet_add_aoa(ws, [[`Total Bottles: ${totalBottlesSpan.textContent}`, `Total Amount: ₹${totalAmountSpan.textContent}`]], { origin: "A3" });
+  XLSX.utils.sheet_add_aoa(ws, [[""]], { origin: "A4" });
+  XLSX.utils.sheet_add_aoa(ws, ws_data, { origin: "A5" });
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Milk Report");
+  XLSX.writeFile(wb, "Milk_Bottle_Tracker_Report.xlsx");
 });
 
-// ✅ PDF Export
+// 🟢 Export styled PDF (exclude Actions)
 exportPdfBtn?.addEventListener("click", () => {
   const logoURL = "https://rmoharana038.github.io/Milk-Bottle-Tracker/icon.png";
   const now = new Date();
   const formattedDate = now.toLocaleString("en-IN", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit"
+    weekday: "long", day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit"
   });
 
-  const table = document.querySelector("table")?.outerHTML || "";
-  const summary = `
-    <p><strong>Total Bottles:</strong> ${totalBottlesSpan.textContent} |
-       <strong>Total Amount:</strong> ₹${totalAmountSpan.textContent}</p>
-  `;
+  const allRows = document.querySelectorAll("#entry-list tr");
+  let tableRows = "";
+  allRows.forEach(row => {
+    const cells = row.querySelectorAll("td");
+    if (cells.length >= 4) {
+      const date = cells[0].innerHTML;
+      const bottles = cells[1].querySelector("input")?.value || "";
+      const amount = cells[2].innerHTML;
+      const status = cells[3].innerText;
+      tableRows += `<tr><td>${date}</td><td>${bottles}</td><td>${amount}</td><td>${status}</td></tr>`;
+    }
+  });
 
-  const printWin = window.open("", "", "width=900,height=700");
-  printWin.document.write(`
+  const html = `
     <html>
       <head>
-        <title>Milk Bottle Tracker</title>
+        <title>Milk Bottle Tracker Report</title>
         <style>
           body { font-family: Arial; padding: 20px; }
           h2 { color: #2c3e50; }
-          table { border-collapse: collapse; width: 100%; }
-          table, th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
-          th { background: #f0f0f0; }
+          table { border-collapse: collapse; width: 100%; margin-top: 15px; }
+          th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+          th { background-color: #f0f0f0; }
         </style>
       </head>
       <body>
         <img src="${logoURL}" alt="Logo" style="height: 60px" />
         <h2>Milk Bottle Tracker Report</h2>
         <p><strong>Generated:</strong> ${formattedDate}</p>
-        ${summary}
-        ${table}
+        <p><strong>Total Bottles:</strong> ${totalBottlesSpan.textContent} | <strong>Total Amount:</strong> ₹${totalAmountSpan.textContent}</p>
+        <table>
+          <thead>
+            <tr><th>Date</th><th>Bottles</th><th>Amount</th><th>Status</th></tr>
+          </thead>
+          <tbody>${tableRows}</tbody>
+        </table>
       </body>
     </html>
-  `);
+  `;
+
+  const printWin = window.open("", "", "width=900,height=700");
+  printWin.document.write(html);
   printWin.document.close();
   printWin.print();
 });
 
+// Sync on reconnect
 window.addEventListener("online", () => {
   if (currentUser && localDB) checkPendingSync();
 });
