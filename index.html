@@ -12,12 +12,15 @@
   <link rel="icon" href="icon.png" type="image/png" />
   <meta name="theme-color" content="#2196f3" />
 
-  <!-- PWA Meta (optional but good) -->
+  <!-- PWA Meta -->
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
 
-  <!-- Chart.js for analytics -->
+  <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- ✅ SheetJS for Excel Export -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
   <header class="app-header">
@@ -100,10 +103,10 @@
     </section>
   </main>
 
-  <!-- Firebase logic -->
+  <!-- Firebase Logic -->
   <script type="module" src="script.js"></script>
 
-  <!-- PWA service worker registration -->
+  <!-- PWA service worker -->
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {
