@@ -1,4 +1,4 @@
-// script.js - Milk Bottle Tracker (Fixed & Enhanced)
+// script.js - Milk Bottle Tracker (Offline + Sync Enabled)
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
@@ -11,7 +11,6 @@ import {
   doc,
   collection,
   addDoc,
-  getDocs,
   deleteDoc,
   updateDoc,
   onSnapshot,
@@ -41,12 +40,57 @@ const exportPdfBtn = document.getElementById("export-pdf");
 
 let currentUser = null;
 
+// ---------- IndexedDB Setup ----------
+const dbPromise = indexedDB.open("milkTrackerDB", 1);
+dbPromise.onupgradeneeded = function (event) {
+  const db = event.target.result;
+  if (!db.objectStoreNames.contains("entries")) {
+    db.createObjectStore("entries", { keyPath: "localId", autoIncrement: true });
+  }
+};
+
+// Save entry locally
+function saveToLocal(entry) {
+  const req = indexedDB.open("milkTrackerDB", 1);
+  req.onsuccess = function () {
+    const db = req.result;
+    const tx = db.transaction("entries", "readwrite");
+    tx.objectStore("entries").add({ ...entry, synced: false });
+  };
+}
+
+// Sync local entries
+async function syncLocalEntries() {
+  const req = indexedDB.open("milkTrackerDB", 1);
+  req.onsuccess = async function () {
+    const db = req.result;
+    const tx = db.transaction("entries", "readwrite");
+    const store = tx.objectStore("entries");
+
+    const getAllReq = store.getAll();
+    getAllReq.onsuccess = async function () {
+      const unsynced = getAllReq.result.filter(e => !e.synced);
+      for (const entry of unsynced) {
+        await addDoc(collection(dbFirestore, "users", currentUser.uid, "entries"), {
+          bottles: entry.bottles,
+          amount: entry.amount,
+          timestamp: entry.timestamp
+        });
+        entry.synced = true;
+        store.put(entry); // mark as synced
+      }
+    };
+  };
+}
+
 // Show user info
 onAuthStateChanged(auth, user => {
   if (user) {
     currentUser = user;
+    dbFirestore = getFirestore(app);
     userNameDisplay.textContent = user.displayName || user.email;
     listenToEntries();
+    window.addEventListener("online", syncLocalEntries);
   } else {
     window.location.href = "login.html";
   }
@@ -76,7 +120,13 @@ if (addEntryBtn) {
       timestamp: entryTime.toISOString()
     };
 
-    await addDoc(collection(db, "users", currentUser.uid, "entries"), payload);
+    if (navigator.onLine) {
+      await addDoc(collection(db, "users", currentUser.uid, "entries"), payload);
+    } else {
+      saveToLocal(payload);
+      alert("Saved offline. Will sync when reconnected.");
+    }
+
     bottleInput.value = "";
     entryDatetimeInput.value = "";
     calculatedAmount.textContent = "0";
@@ -108,9 +158,7 @@ function listenToEntries() {
         <td><input type="number" value="${data.bottles}" min="1" class="edit-bottles" data-id="${id}" /></td>
         <td>₹${data.amount}<br><span style="font-size:0.8rem;">@ ₹25/bottle</span></td>
         <td>Completed</td>
-        <td>
-          <button class="delete-btn" data-id="${id}">🗑️</button>
-        </td>
+        <td><button class="delete-btn" data-id="${id}">🗑️</button></td>
       `;
       entryList.appendChild(row);
 
@@ -130,11 +178,13 @@ entryList.addEventListener("change", async e => {
   if (e.target.classList.contains("edit-bottles")) {
     const id = e.target.dataset.id;
     const newBottles = parseInt(e.target.value);
-    if (newBottles && newBottles > 0) {
+    if (newBottles && newBottles > 0 && navigator.onLine) {
       await updateDoc(doc(db, "users", currentUser.uid, "entries", id), {
         bottles: newBottles,
         amount: newBottles * 25
       });
+    } else {
+      alert("Cannot edit while offline.");
     }
   }
 });
@@ -143,7 +193,11 @@ entryList.addEventListener("change", async e => {
 entryList.addEventListener("click", async e => {
   if (e.target.classList.contains("delete-btn")) {
     const id = e.target.dataset.id;
-    await deleteDoc(doc(db, "users", currentUser.uid, "entries", id));
+    if (navigator.onLine) {
+      await deleteDoc(doc(db, "users", currentUser.uid, "entries", id));
+    } else {
+      alert("Cannot delete while offline.");
+    }
   }
 });
 
@@ -194,4 +248,4 @@ if (exportPdfBtn) {
     printWin.document.close();
     printWin.print();
   });
-}
+});
