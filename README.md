@@ -1,6 +1,3 @@
-Here is the **complete and updated `README.md`** file ready for copy-paste and replacement in your Milk Bottle Tracker project:
-
-```markdown
 # 🍼 Milk Bottle Tracker
 
 A professional and responsive web app to track daily milk bottle usage, expenses, and history. Built using Firebase + Vanilla JavaScript with full PWA offline capabilities and auto-sync.
@@ -34,7 +31,6 @@ A professional and responsive web app to track daily milk bottle usage, expenses
 
 ## 📦 Folder Structure
 
-```
 
 Milk-Bottle-Tracker/
 ├── index.html
@@ -42,12 +38,12 @@ Milk-Bottle-Tracker/
 ├── signup.html
 ├── script.js
 ├── style.css
-├── sw\.js
+├── sw.js
 ├── manifest.json
 ├── firebase-config.js
 ├── icon.png
 
-````
+
 
 ---
 
@@ -58,17 +54,18 @@ Milk-Bottle-Tracker/
 ```bash
 git clone https://github.com/YOUR_USERNAME/Milk-Bottle-Tracker.git
 cd Milk-Bottle-Tracker
-````
 
-### 2. Setup Firebase
+2. Setup Firebase
+Go to Firebase Console
 
-* Go to [Firebase Console](https://console.firebase.google.com)
-* Create a new project
-* Enable **Authentication > Email/Password**
-* Enable **Cloud Firestore**
-* Copy your Firebase credentials into `firebase-config.js`:
+Create a new project
 
-```js
+Enable Authentication > Email/Password
+
+Enable Cloud Firestore
+
+Copy your Firebase credentials into firebase-config.js:
+
 // firebase-config.js
 const firebaseConfig = {
   apiKey: "YOUR_API_KEY",
@@ -79,11 +76,10 @@ const firebaseConfig = {
   appId: "XXXXXXXXXXXXXXX"
 };
 export default firebaseConfig;
-```
 
-### 3. Firestore Rules
 
-```js
+3. Firestore Rules
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -92,54 +88,35 @@ service cloud.firestore {
     }
   }
 }
-```
 
-### 4. Run the App Locally
 
-Open `index.html` directly in a browser
+4. Run the App Locally
+Open index.html directly in a browser
 OR use a static server like:
 
-```bash
 npx serve .
-```
 
----
 
-## 🌐 How Offline & Sync Works
+🌐 How Offline & Sync Works
+New entries added offline are stored in IndexedDB
 
-* New entries added offline are stored in `IndexedDB`
-* On reconnect, unsynced entries are pushed to Firebase
-* Editing & deleting entries requires online access
+On reconnect, unsynced entries are pushed to Firebase
 
----
+Editing & deleting entries requires online access
 
-## 📲 PWA Installation
+📲 PWA Installation
+Open the app in Chrome or Edge
 
-* Open the app in Chrome or Edge
-* Click "Install" from the address bar or browser menu
-* App works offline after first load ✅
+Click "Install" from the address bar or browser menu
 
----
+App works offline after first load ✅
 
-## 📤 Export Options
+📤 Export Options
+Click the 📗 Excel or 📕 PDF button to download your entry table
 
-* Click the 📗 Excel or 📕 PDF button to download your entry table
-* Title includes current month and year for clarity
+Title includes current month and year for clarity
 
----
-
-## 🤝 Credits
-
-Made with ❤️ by \[Your Name / Brand]
+🤝 Credits
+Made with ❤️ by [Your Name / Brand]
 Inspired by simple tools for smart daily dairy tracking.
 
----
-
-## 📜 License
-
-MIT License – Free for personal and commercial use.
-
-```
-
-Let me know if you'd like help customizing the **GitHub repo link**, **name**, or **deployment instructions**.
-```
