@@ -1,4 +1,4 @@
-// script.js - Milk Bottle Tracker with Enhanced PDF/XLSX Export & IndexedDB Sync
+// script.js - Milk Bottle Tracker with Enhanced PDF & XLSX Export
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
@@ -39,6 +39,7 @@ const exportPdfBtn = document.getElementById("export-pdf");
 let currentUser = null;
 let localDB = null;
 
+// IndexedDB setup
 const openDB = indexedDB.open("MilkTrackerDB", 1);
 openDB.onupgradeneeded = e => {
   localDB = e.target.result;
@@ -60,7 +61,8 @@ function checkPendingSync() {
   const store = tx.objectStore("entries");
   const getAll = store.getAll();
   getAll.onsuccess = async () => {
-    for (const item of getAll.result) {
+    const items = getAll.result;
+    for (const item of items) {
       await addDoc(collection(db, "users", currentUser.uid, "entries"), item);
       store.delete(item.id);
     }
@@ -107,10 +109,15 @@ addEntryBtn?.addEventListener("click", async () => {
 });
 
 function listenToEntries() {
-  const q = query(collection(db, "users", currentUser.uid, "entries"), orderBy("timestamp", "desc"));
+  const q = query(
+    collection(db, "users", currentUser.uid, "entries"),
+    orderBy("timestamp", "desc")
+  );
   onSnapshot(q, snapshot => {
     entryList.innerHTML = "";
-    let totalEntries = 0, totalBottles = 0, totalAmount = 0;
+    let totalEntries = 0,
+        totalBottles = 0,
+        totalAmount = 0;
 
     snapshot.forEach(docSnap => {
       const data = docSnap.data();
@@ -166,95 +173,117 @@ entryList.addEventListener("click", async e => {
   }
 });
 
-logoutBtn?.addEventListener("click", () => signOut(auth));
+logoutBtn?.addEventListener("click", () => {
+  signOut(auth);
+});
 
-// 🟢 Export as XLSX using SheetJS
+// 🧾 Export to XLSX using SheetJS
 exportExcelBtn?.addEventListener("click", () => {
-  const rows = [...document.querySelectorAll("#entry-list tr")];
-  const ws_data = [["Date", "Bottles", "Amount", "Status"]];
-  rows.forEach(row => {
-    const cells = row.querySelectorAll("td");
-    if (cells.length >= 4) {
-      const date = cells[0].innerText;
-      const bottles = cells[1].querySelector("input")?.value || "";
-      const amount = cells[2].innerText;
-      const status = cells[3].innerText;
-      ws_data.push([date, bottles, amount, status]);
+  const logo = "https://rmoharana038.github.io/Milk-Bottle-Tracker/icon.png";
+  const date = new Date().toLocaleString("en-IN", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+
+  const rows = [["Milk Bottle Tracker Report"], [`Generated: ${date}`], [""],
+    [`Total Bottles: ${totalBottlesSpan.textContent}`, `Total Amount: ₹${totalAmountSpan.textContent}`],
+    [""],
+    ["Date", "Bottles", "Amount", "Status"]
+  ];
+
+  document.querySelectorAll("#entry-list tr").forEach(tr => {
+    const tds = tr.querySelectorAll("td");
+    if (tds.length >= 4) {
+      const date = tds[0].innerText;
+      const bottles = tds[1].querySelector("input")?.value || "";
+      const amount = tds[2].innerText.replace(/\n.*/, "");
+      const status = tds[3].innerText;
+      rows.push([date, bottles, amount, status]);
     }
   });
 
-  const now = new Date();
-  const formattedDate = now.toLocaleString("en-IN", {
-    weekday: "long", day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit"
-  });
-
-  const ws = XLSX.utils.aoa_to_sheet([]);
-  XLSX.utils.sheet_add_aoa(ws, [["Milk Bottle Tracker Report"]], { origin: "A1" });
-  XLSX.utils.sheet_add_aoa(ws, [[`Generated: ${formattedDate}`]], { origin: "A2" });
-  XLSX.utils.sheet_add_aoa(ws, [[`Total Bottles: ${totalBottlesSpan.textContent}`, `Total Amount: ₹${totalAmountSpan.textContent}`]], { origin: "A3" });
-  XLSX.utils.sheet_add_aoa(ws, [[""]], { origin: "A4" });
-  XLSX.utils.sheet_add_aoa(ws, ws_data, { origin: "A5" });
-
+  const ws = XLSX.utils.aoa_to_sheet(rows);
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Milk Report");
+  XLSX.utils.book_append_sheet(wb, ws, "Report");
+
+  const headerStyle = {
+    font: { bold: true, color: { rgb: "FFFFFF" } },
+    fill: { fgColor: { rgb: "4CAF50" } },
+    alignment: { horizontal: "center" }
+  };
+
+  ["A6", "B6", "C6", "D6"].forEach(cell => ws[cell].s = headerStyle);
+  const borderStyle = { style: "thin", color: { rgb: "CCCCCC" } };
+  const range = XLSX.utils.decode_range(ws["!ref"]);
+  for (let R = range.s.r; R <= range.e.r; ++R) {
+    for (let C = 0; C <= 3; ++C) {
+      const cell = ws[XLSX.utils.encode_cell({ r: R, c: C })];
+      if (!cell) continue;
+      cell.s = cell.s || {};
+      cell.s.border = {
+        top: borderStyle, bottom: borderStyle,
+        left: borderStyle, right: borderStyle
+      };
+    }
+  }
+
+  ws["!cols"] = [{ wch: 20 }, { wch: 10 }, { wch: 15 }, { wch: 12 }];
   XLSX.writeFile(wb, "Milk_Bottle_Tracker_Report.xlsx");
 });
 
-// 🟢 Export styled PDF (exclude Actions)
+// 🖨️ Export PDF (same as before)
 exportPdfBtn?.addEventListener("click", () => {
   const logoURL = "https://rmoharana038.github.io/Milk-Bottle-Tracker/icon.png";
   const now = new Date();
   const formattedDate = now.toLocaleString("en-IN", {
-    weekday: "long", day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit"
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
   });
 
-  const allRows = document.querySelectorAll("#entry-list tr");
-  let tableRows = "";
-  allRows.forEach(row => {
-    const cells = row.querySelectorAll("td");
-    if (cells.length >= 4) {
-      const date = cells[0].innerHTML;
-      const bottles = cells[1].querySelector("input")?.value || "";
-      const amount = cells[2].innerHTML;
-      const status = cells[3].innerText;
-      tableRows += `<tr><td>${date}</td><td>${bottles}</td><td>${amount}</td><td>${status}</td></tr>`;
-    }
-  });
+  const table = document.querySelector("table")?.cloneNode(true);
+  if (table) {
+    table.querySelectorAll("th:last-child, td:last-child").forEach(el => el.remove());
+  }
 
-  const html = `
+  const summary = `
+    <p><strong>Total Bottles:</strong> ${totalBottlesSpan.textContent} |
+       <strong>Total Amount:</strong> ₹${totalAmountSpan.textContent}</p>
+  `;
+
+  const win = window.open("", "", "width=900,height=700");
+  win.document.write(`
     <html>
       <head>
-        <title>Milk Bottle Tracker Report</title>
+        <title>Milk Bottle Tracker</title>
         <style>
           body { font-family: Arial; padding: 20px; }
           h2 { color: #2c3e50; }
-          table { border-collapse: collapse; width: 100%; margin-top: 15px; }
-          th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
-          th { background-color: #f0f0f0; }
+          table { border-collapse: collapse; width: 100%; }
+          table, th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+          th { background: #f0f0f0; }
         </style>
       </head>
       <body>
         <img src="${logoURL}" alt="Logo" style="height: 60px" />
         <h2>Milk Bottle Tracker Report</h2>
         <p><strong>Generated:</strong> ${formattedDate}</p>
-        <p><strong>Total Bottles:</strong> ${totalBottlesSpan.textContent} | <strong>Total Amount:</strong> ₹${totalAmountSpan.textContent}</p>
-        <table>
-          <thead>
-            <tr><th>Date</th><th>Bottles</th><th>Amount</th><th>Status</th></tr>
-          </thead>
-          <tbody>${tableRows}</tbody>
-        </table>
+        ${summary}
+        ${table?.outerHTML || ""}
       </body>
     </html>
-  `;
-
-  const printWin = window.open("", "", "width=900,height=700");
-  printWin.document.write(html);
-  printWin.document.close();
-  printWin.print();
+  `);
+  win.document.close();
+  win.print();
 });
 
-// Sync on reconnect
 window.addEventListener("online", () => {
   if (currentUser && localDB) checkPendingSync();
 });
