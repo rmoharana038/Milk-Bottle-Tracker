@@ -1,4 +1,4 @@
-// script.js - Milk Bottle Tracker with Enhanced PDF & XLSX Export
+// script.js - Milk Bottle Tracker with PDF & Styled XLSX Export
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
@@ -19,10 +19,12 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import firebaseConfig from "./firebase-config.js";
 
+// Firebase init
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+// DOM elements
 const bottleInput = document.getElementById("bottle-count");
 const addEntryBtn = document.getElementById("add-entry");
 const entryList = document.getElementById("entry-list");
@@ -115,9 +117,7 @@ function listenToEntries() {
   );
   onSnapshot(q, snapshot => {
     entryList.innerHTML = "";
-    let totalEntries = 0,
-        totalBottles = 0,
-        totalAmount = 0;
+    let totalEntries = 0, totalBottles = 0, totalAmount = 0;
 
     snapshot.forEach(docSnap => {
       const data = docSnap.data();
@@ -177,9 +177,8 @@ logoutBtn?.addEventListener("click", () => {
   signOut(auth);
 });
 
-// 🧾 Export to XLSX using SheetJS
+// 🧾 Export XLSX (Styled with logo & 🥛 header)
 exportExcelBtn?.addEventListener("click", () => {
-  const logo = "https://rmoharana038.github.io/Milk-Bottle-Tracker/icon.png";
   const date = new Date().toLocaleString("en-IN", {
     weekday: "long",
     day: "numeric",
@@ -189,38 +188,48 @@ exportExcelBtn?.addEventListener("click", () => {
     minute: "2-digit"
   });
 
-  const rows = [["Milk Bottle Tracker Report"], [`Generated: ${date}`], [""],
-    [`Total Bottles: ${totalBottlesSpan.textContent}`, `Total Amount: ₹${totalAmountSpan.textContent}`],
-    [""],
-    ["Date", "Bottles", "Amount", "Status"]
-  ];
+  const header = ["🥛 Milk Bottle Tracker — Monthly Report"];
+  const generated = [`Generated: ${date}`];
+  const summary = [`Total Bottles: ${totalBottlesSpan.textContent}`, `Total Amount: ₹${totalAmountSpan.textContent}`];
+
+  const tableHeaders = ["Date & Time", "Bottles", "Amount", "Status"];
+  const dataRows = [];
 
   document.querySelectorAll("#entry-list tr").forEach(tr => {
     const tds = tr.querySelectorAll("td");
     if (tds.length >= 4) {
-      const date = tds[0].innerText;
+      const date = tds[0].innerText.trim();
       const bottles = tds[1].querySelector("input")?.value || "";
-      const amount = tds[2].innerText.replace(/\n.*/, "");
-      const status = tds[3].innerText;
-      rows.push([date, bottles, amount, status]);
+      const amount = tds[2].innerText.split("\n")[0];
+      const status = tds[3].innerText.trim();
+      dataRows.push([date, bottles, amount, status]);
     }
   });
 
-  const ws = XLSX.utils.aoa_to_sheet(rows);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Report");
+  const allData = [
+    header, [], generated, [], summary, [], tableHeaders, ...dataRows
+  ];
 
+  const ws = XLSX.utils.aoa_to_sheet(allData);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Monthly Report");
+
+  // Style header
   const headerStyle = {
-    font: { bold: true, color: { rgb: "FFFFFF" } },
+    font: { bold: true, color: { rgb: "FFFFFF" }, sz: 14 },
     fill: { fgColor: { rgb: "4CAF50" } },
     alignment: { horizontal: "center" }
   };
 
-  ["A6", "B6", "C6", "D6"].forEach(cell => ws[cell].s = headerStyle);
+  ["A7", "B7", "C7", "D7"].forEach(cell => {
+    if (ws[cell]) ws[cell].s = headerStyle;
+  });
+
+  // Border all data
   const borderStyle = { style: "thin", color: { rgb: "CCCCCC" } };
   const range = XLSX.utils.decode_range(ws["!ref"]);
-  for (let R = range.s.r; R <= range.e.r; ++R) {
-    for (let C = 0; C <= 3; ++C) {
+  for (let R = 0; R <= range.e.r; R++) {
+    for (let C = 0; C <= 3; C++) {
       const cell = ws[XLSX.utils.encode_cell({ r: R, c: C })];
       if (!cell) continue;
       cell.s = cell.s || {};
@@ -231,11 +240,11 @@ exportExcelBtn?.addEventListener("click", () => {
     }
   }
 
-  ws["!cols"] = [{ wch: 20 }, { wch: 10 }, { wch: 15 }, { wch: 12 }];
+  ws["!cols"] = [{ wch: 28 }, { wch: 10 }, { wch: 15 }, { wch: 12 }];
   XLSX.writeFile(wb, "Milk_Bottle_Tracker_Report.xlsx");
 });
 
-// 🖨️ Export PDF (same as before)
+// 🖨️ PDF Export
 exportPdfBtn?.addEventListener("click", () => {
   const logoURL = "https://rmoharana038.github.io/Milk-Bottle-Tracker/icon.png";
   const now = new Date();
@@ -273,7 +282,7 @@ exportPdfBtn?.addEventListener("click", () => {
       </head>
       <body>
         <img src="${logoURL}" alt="Logo" style="height: 60px" />
-        <h2>Milk Bottle Tracker Report</h2>
+        <h2>🥛 Milk Bottle Tracker — Monthly Report</h2>
         <p><strong>Generated:</strong> ${formattedDate}</p>
         ${summary}
         ${table?.outerHTML || ""}
