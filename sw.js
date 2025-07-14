@@ -1,12 +1,10 @@
 const CACHE_NAME = "milk-tracker-v1";
 const FILES_TO_CACHE = [
-  "/",
-  "/index.html",
-  "/style.css",
-  "/script.js",
-  "/manifest.json",
-  "/icon.png",
-  "https://cdn.jsdelivr.net/npm/chart.js"
+  "index.html",
+  "style.css",
+  "script.js",
+  "manifest.json",
+  "icon.png"
 ];
 
 self.addEventListener("install", event => {
@@ -17,12 +15,10 @@ self.addEventListener("install", event => {
 
 self.addEventListener("activate", event => {
   event.waitUntil(
-    caches.keys().then(keyList =>
+    caches.keys().then(keys =>
       Promise.all(
-        keyList.map(key => {
-          if (key !== CACHE_NAME) {
-            return caches.delete(key);
-          }
+        keys.map(key => {
+          if (key !== CACHE_NAME) return caches.delete(key);
         })
       )
     )
