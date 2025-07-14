@@ -177,9 +177,10 @@ logoutBtn?.addEventListener("click", () => {
   signOut(auth);
 });
 
-// 🧾 Export XLSX (Styled with logo & 🥛 header)
+// 🧾 Export XLSX (Styled with 🥛 Header & table)
 exportExcelBtn?.addEventListener("click", () => {
-  const date = new Date().toLocaleString("en-IN", {
+  const now = new Date();
+  const dateStr = now.toLocaleString("en-IN", {
     weekday: "long",
     day: "numeric",
     month: "long",
@@ -188,55 +189,57 @@ exportExcelBtn?.addEventListener("click", () => {
     minute: "2-digit"
   });
 
-  const header = ["🥛 Milk Bottle Tracker — Monthly Report"];
-  const generated = [`Generated: ${date}`];
-  const summary = [`Total Bottles: ${totalBottlesSpan.textContent}`, `Total Amount: ₹${totalAmountSpan.textContent}`];
-
-  const tableHeaders = ["Date & Time", "Bottles", "Amount", "Status"];
-  const dataRows = [];
+  const rows = [
+    ["🥛 Milk Bottle Tracker — Monthly Report"],
+    [],
+    [`Generated: ${dateStr}`],
+    [],
+    [`Total Bottles: ${totalBottlesSpan.textContent}`, `Total Amount: ₹${totalAmountSpan.textContent}`],
+    [],
+    ["Date & Time", "Bottles", "Amount", "Status"]
+  ];
 
   document.querySelectorAll("#entry-list tr").forEach(tr => {
     const tds = tr.querySelectorAll("td");
     if (tds.length >= 4) {
       const date = tds[0].innerText.trim();
       const bottles = tds[1].querySelector("input")?.value || "";
-      const amount = tds[2].innerText.split("\n")[0];
+      const amount = tds[2].innerText.split("\n")[0].trim();
       const status = tds[3].innerText.trim();
-      dataRows.push([date, bottles, amount, status]);
+      rows.push([date, bottles, amount, status]);
     }
   });
 
-  const allData = [
-    header, [], generated, [], summary, [], tableHeaders, ...dataRows
-  ];
-
-  const ws = XLSX.utils.aoa_to_sheet(allData);
+  const ws = XLSX.utils.aoa_to_sheet(rows);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Monthly Report");
 
-  // Style header
+  // Style table headers
   const headerStyle = {
-    font: { bold: true, color: { rgb: "FFFFFF" }, sz: 14 },
+    font: { bold: true, color: { rgb: "FFFFFF" } },
     fill: { fgColor: { rgb: "4CAF50" } },
     alignment: { horizontal: "center" }
   };
-
   ["A7", "B7", "C7", "D7"].forEach(cell => {
     if (ws[cell]) ws[cell].s = headerStyle;
   });
 
-  // Border all data
+  // Add border to all cells
   const borderStyle = { style: "thin", color: { rgb: "CCCCCC" } };
   const range = XLSX.utils.decode_range(ws["!ref"]);
-  for (let R = 0; R <= range.e.r; R++) {
+  for (let R = range.s.r; R <= range.e.r; R++) {
     for (let C = 0; C <= 3; C++) {
-      const cell = ws[XLSX.utils.encode_cell({ r: R, c: C })];
-      if (!cell) continue;
-      cell.s = cell.s || {};
-      cell.s.border = {
-        top: borderStyle, bottom: borderStyle,
-        left: borderStyle, right: borderStyle
-      };
+      const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
+      const cell = ws[cellRef];
+      if (cell) {
+        cell.s = cell.s || {};
+        cell.s.border = {
+          top: borderStyle,
+          bottom: borderStyle,
+          left: borderStyle,
+          right: borderStyle
+        };
+      }
     }
   }
 
@@ -244,7 +247,7 @@ exportExcelBtn?.addEventListener("click", () => {
   XLSX.writeFile(wb, "Milk_Bottle_Tracker_Report.xlsx");
 });
 
-// 🖨️ PDF Export
+// 🖨️ PDF Export (unchanged)
 exportPdfBtn?.addEventListener("click", () => {
   const logoURL = "https://rmoharana038.github.io/Milk-Bottle-Tracker/icon.png";
   const now = new Date();
