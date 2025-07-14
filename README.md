@@ -31,15 +31,15 @@ A professional and responsive web app to track daily milk bottle usage, expenses
 
 ## 📦 Folder Structure
 
-Milk-Bottle-Tracker/
-├── index.html
-├── login.html
-├── signup.html
-├── script.js
-├── style.css
-├── sw.js
-├── manifest.json
-├── firebase-config.js
+Milk-Bottle-Tracker/ 
+├── index.html 
+├── login.html 
+├── signup.html 
+├── script.js 
+├── style.css 
+├── sw.js 
+├── manifest.json 
+├── firebase-config.js 
 ├── icon.png
 
 
