@@ -1,4 +1,4 @@
-// script.js - Milk Bottle Tracker with IndexedDB Sync
+// script.js - Milk Bottle Tracker with Enhanced Export (PDF/Excel + IndexedDB Sync)
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
@@ -188,34 +188,94 @@ logoutBtn?.addEventListener("click", () => {
   signOut(auth);
 });
 
-// Export Excel
+// Export Excel (.xlsx-compatible with styling & summary)
 exportExcelBtn?.addEventListener("click", () => {
-  const table = document.querySelector("table").outerHTML;
-  const blob = new Blob([
-    `<html><head><meta charset='utf-8'></head><body>
-    <h2>Milk Bottle Tracker - ${new Date().toLocaleString("default", {
-      month: "long",
-      year: "numeric"
-    })}</h2>${table}</body></html>`
-  ], { type: "application/vnd.ms-excel" });
+  const logoURL = "https://rmoharana038.github.io/Milk-Bottle-Tracker/icon.png";
+  const now = new Date();
+  const formattedDate = now.toLocaleString("en-IN", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+
+  const table = document.querySelector("table")?.outerHTML || "";
+  const summary = `
+    <p><strong>Total Bottles:</strong> ${totalBottlesSpan.textContent} |
+       <strong>Total Amount:</strong> ₹${totalAmountSpan.textContent}</p>
+  `;
+
+  const htmlContent = `
+    <html>
+      <head>
+        <meta charset='utf-8'>
+        <style>
+          body { font-family: Arial; padding: 20px; }
+          h2 { color: #2c3e50; }
+          table { border-collapse: collapse; width: 100%; }
+          table, th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+          th { background: #f7f7f7; }
+        </style>
+      </head>
+      <body>
+        <img src="${logoURL}" alt="Logo" style="height: 60px" />
+        <h2>Milk Bottle Tracker Report</h2>
+        <p><strong>Generated:</strong> ${formattedDate}</p>
+        ${summary}
+        ${table}
+      </body>
+    </html>
+  `;
+
+  const blob = new Blob([htmlContent], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+  });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = "Milk_Bottle_Tracker.xls";
+  a.download = "Milk_Bottle_Tracker_Report.xls";
   a.click();
 });
 
-// Export PDF
+// Export PDF (styled)
 exportPdfBtn?.addEventListener("click", () => {
-  const printWin = window.open("", "", "width=800,height=600");
+  const logoURL = "https://rmoharana038.github.io/Milk-Bottle-Tracker/icon.png";
+  const now = new Date();
+  const formattedDate = now.toLocaleString("en-IN", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+
+  const table = document.querySelector("table")?.outerHTML || "";
+  const summary = `
+    <p><strong>Total Bottles:</strong> ${totalBottlesSpan.textContent} |
+       <strong>Total Amount:</strong> ₹${totalAmountSpan.textContent}</p>
+  `;
+
+  const printWin = window.open("", "", "width=900,height=700");
   printWin.document.write(`
     <html>
-      <head><title>Milk Bottle Tracker</title></head>
+      <head>
+        <title>Milk Bottle Tracker</title>
+        <style>
+          body { font-family: Arial; padding: 20px; }
+          h2 { color: #2c3e50; }
+          table { border-collapse: collapse; width: 100%; }
+          table, th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+          th { background: #f0f0f0; }
+        </style>
+      </head>
       <body>
-        <h2>Milk Bottle Tracker - ${new Date().toLocaleString("default", {
-          month: "long",
-          year: "numeric"
-        })}</h2>
-        ${document.querySelector("table").outerHTML}
+        <img src="${logoURL}" alt="Logo" style="height: 60px" />
+        <h2>Milk Bottle Tracker Report</h2>
+        <p><strong>Generated:</strong> ${formattedDate}</p>
+        ${summary}
+        ${table}
       </body>
     </html>
   `);
