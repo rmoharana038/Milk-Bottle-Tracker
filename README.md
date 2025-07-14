@@ -1,136 +1,132 @@
+# 🥛 Milk Bottle Tracker
 
-# 🍼 Milk Bottle Tracker
+A modern web app to track daily milk bottle usage with advanced features like Firebase sync, offline support, analytics, and PDF/Excel export.
 
-A professional and responsive web app to track daily milk bottle usage, expenses, and history. Built using Firebase + Vanilla JavaScript with full PWA offline capabilities and auto-sync.
-
----
-
-## 🚀 Features
-
-- 🔐 Firebase Auth – Login / Signup / Password Reset
-- 📊 Dashboard – Track total entries, bottles, and amount
-- 🧾 Add / Edit / Delete entries
-- 📴 Works Offline – Create entries offline using IndexedDB
-- 🔄 Auto-Sync – Automatically syncs offline entries when reconnected
-- 📤 Export entries to Excel and PDF
-- 📈 Usage Analytics – 7 / 30 / 90 days chart (Chart.js)
-- 📱 Installable PWA (Progressive Web App)
-- 🔒 Per-user private data in Firestore
-- 🌐 Fully responsive – Mobile & Desktop ready
+🔗 **Live Demo:** [rmoharana038.github.io/Milk-Bottle-Tracker](https://rmoharana038.github.io/Milk-Bottle-Tracker)
 
 ---
 
-## 🛠 Tech Stack
+## 📦 Features
 
-- HTML + CSS + JavaScript
-- Firebase Auth + Firestore
-- IndexedDB for offline data
-- Chart.js for graphs
-- PWA (manifest + service worker)
+- ✅ **Firebase Authentication** — Secure login/logout support
+- ✅ **Realtime Firestore Sync** — Entries auto-synced with Firestore
+- ✅ **Offline Mode (IndexedDB)** — Works fully offline and syncs when back online
+- ✅ **Entry Management** — Add, edit, and delete bottle usage entries
+- ✅ **Analytics Dashboard** — Interactive bar charts for 7, 30, and 90-day insights
+- ✅ **Excel Export** — Styled `.xlsx` report with logo, date, summary, and borders
+- ✅ **PDF Export** — Beautiful printable report with logo, date & table
+- ✅ **Responsive UI** — Fully optimized for mobile and desktop
+- ✅ **PWA Enabled** — Installable on Android/desktop like a native app
 
 ---
 
-## 📦 Folder Structure
+## 📊 Technologies Used
+
+| Frontend | Backend & Services | Libraries |
+|----------|---------------------|-----------|
+| HTML5, CSS3, JavaScript (ES6) | Firebase Firestore, Firebase Auth | Chart.js, SheetJS (xlsx.js) |
+
+---
+
+## 📁 Project Structure
 
 ```
 Milk-Bottle-Tracker/
 ├── index.html
 ├── login.html
-├── signup.html
-├── script.js
 ├── style.css
-├── sw.js
-├── manifest.json
+├── script.js
 ├── firebase-config.js
 ├── icon.png
+├── manifest.json
+├── sw.js
+└── README.md
 ```
 
 ---
 
-## 🔧 Setup Instructions
+## ⚙️ Setup Instructions
 
-### 1. Clone the Repo
+1. **Clone the Repo**
+   ```bash
+   git clone https://github.com/rmoharana038/Milk-Bottle-Tracker.git
+   ```
 
-```bash
-git clone https://github.com/YOUR_USERNAME/Milk-Bottle-Tracker.git
-cd Milk-Bottle-Tracker
-```
+2. **Firebase Configuration**
+   - Create a Firebase project.
+   - Enable **Authentication** (Email/Password).
+   - Set Firestore rules:
+     ```js
+     rules_version = '2';
+     service cloud.firestore {
+       match /databases/{database}/documents {
+         match /users/{userId}/entries/{entryId} {
+           allow read, write: if request.auth != null && request.auth.uid == userId;
+         }
+       }
+     }
+     ```
+   - Add your config to `firebase-config.js`:
+     ```js
+     export default {
+       apiKey: "...",
+       authDomain: "...",
+       projectId: "...",
+       ...
+     };
+     ```
 
-### 2. Setup Firebase
-
-- Go to [Firebase Console](https://console.firebase.google.com)
-- Create a new project
-- Enable **Authentication > Email/Password**
-- Enable **Cloud Firestore**
-- Copy your Firebase credentials into `firebase-config.js`:
-
-```js
-// firebase-config.js
-const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "your-app.firebaseapp.com",
-  projectId: "your-app",
-  storageBucket: "your-app.appspot.com",
-  messagingSenderId: "XXXXXXX",
-  appId: "XXXXXXXXXXXXXXX"
-};
-export default firebaseConfig;
-```
-
-### 3. Firestore Rules
-
-```js
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /users/{userId}/entries/{entryId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-  }
-}
-```
-
-### 4. Run the App Locally
-
-Open `index.html` directly in a browser  
-OR use a static server like:
-
-```bash
-npx serve .
-```
+3. **Host on GitHub Pages**
+   - Push your code to `main` branch.
+   - Go to GitHub repo → Settings → Pages → Source: `main /root` → Save.
+   - Your app is live!
 
 ---
 
-## 🌐 How Offline & Sync Works
+## 📦 Exports Overview
 
-- New entries added offline are stored in `IndexedDB`
-- On reconnect, unsynced entries are pushed to Firebase
-- Editing & deleting entries requires online access
+### 🧾 Excel (.xlsx)
 
----
+- Title: `🥛 Milk Bottle Tracker — Monthly Report`
+- Includes:
+  - Current date/time
+  - Total bottles & amount
+  - Table: Date & Time, Bottles, Amount, Status
+- Styling:
+  - Green headers, bold fonts, table borders
 
-## 📲 PWA Installation
+### 🖨️ PDF
 
-- Open the app in Chrome or Edge
-- Click "Install" from the address bar or browser menu
-- App works offline after first load ✅
-
----
-
-## 📤 Export Options
-
-- Click the 📗 Excel or 📕 PDF button to download your entry table
-- Title includes current month and year for clarity
-
----
-
-## 🤝 Credits
-
-Made with ❤️ by [Your Name / Brand]  
-Inspired by simple tools for smart daily dairy tracking.
+- Includes:
+  - Logo + Title
+  - Date/time
+  - Summary & full data table
+- Opens print preview for download/save
 
 ---
 
-## 📜 License
+## 📱 PWA Support
 
-MIT License – Free for personal and commercial use.
+- **Add to Home Screen** support (mobile)
+- **Offline Access** (via `sw.js`)
+- Custom icon & manifest included
+
+---
+
+## 📸 Screenshots
+
+![Dashboard Screenshot](https://rmoharana038.github.io/Milk-Bottle-Tracker/assets/dashboard.png)
+![Analytics Screenshot](https://rmoharana038.github.io/Milk-Bottle-Tracker/assets/chart.png)
+> _(Add your own screenshots to `/assets/` folder for better visuals)_
+
+---
+
+## 🙏 Credits
+
+Made with 💙 by [Rajesh Moharana](https://github.com/rmoharana038)
+
+---
+
+## 📄 License
+
+This project is open-source and available under the [MIT License](LICENSE).
