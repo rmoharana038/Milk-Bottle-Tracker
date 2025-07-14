@@ -60,18 +60,20 @@ function saveToLocal(entry) {
 }
 
 // Sync local entries
-async function syncLocalEntries() {
+function syncLocalEntries() {
+  if (!currentUser) return;
+
   const req = indexedDB.open("milkTrackerDB", 1);
-  req.onsuccess = async function () {
-    const db = req.result;
-    const tx = db.transaction("entries", "readwrite");
+  req.onsuccess = function () {
+    const dbLocal = req.result;
+    const tx = dbLocal.transaction("entries", "readwrite");
     const store = tx.objectStore("entries");
 
     const getAllReq = store.getAll();
     getAllReq.onsuccess = async function () {
       const unsynced = getAllReq.result.filter(e => !e.synced);
       for (const entry of unsynced) {
-        await addDoc(collection(dbFirestore, "users", currentUser.uid, "entries"), {
+        await addDoc(collection(db, "users", currentUser.uid, "entries"), {
           bottles: entry.bottles,
           amount: entry.amount,
           timestamp: entry.timestamp
@@ -87,9 +89,9 @@ async function syncLocalEntries() {
 onAuthStateChanged(auth, user => {
   if (user) {
     currentUser = user;
-    dbFirestore = getFirestore(app);
     userNameDisplay.textContent = user.displayName || user.email;
     listenToEntries();
+    if (navigator.onLine) syncLocalEntries();
     window.addEventListener("online", syncLocalEntries);
   } else {
     window.location.href = "login.html";
@@ -120,7 +122,7 @@ if (addEntryBtn) {
       timestamp: entryTime.toISOString()
     };
 
-    if (navigator.onLine) {
+    if (navigator.onLine && currentUser) {
       await addDoc(collection(db, "users", currentUser.uid, "entries"), payload);
     } else {
       saveToLocal(payload);
@@ -142,8 +144,8 @@ function listenToEntries() {
   onSnapshot(q, snapshot => {
     entryList.innerHTML = "";
     let totalEntries = 0,
-      totalBottles = 0,
-      totalAmount = 0;
+        totalBottles = 0,
+        totalAmount = 0;
 
     snapshot.forEach(docSnap => {
       const data = docSnap.data();
