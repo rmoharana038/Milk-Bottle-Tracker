@@ -5,10 +5,18 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Milk Bottle Tracker</title>
+
+  <!-- Styles & Icons -->
   <link rel="stylesheet" href="style.css" />
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon.png" type="image/png" />
   <meta name="theme-color" content="#2196f3" />
+
+  <!-- PWA Meta (optional but good) -->
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+
+  <!-- Chart.js for analytics -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
@@ -92,14 +100,17 @@
     </section>
   </main>
 
+  <!-- Firebase logic -->
   <script type="module" src="script.js"></script>
+
+  <!-- PWA service worker registration -->
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {
         navigator.serviceWorker
           .register("sw.js")
           .then(() => console.log("✅ Service Worker Registered"))
-          .catch(err => console.error("Service Worker registration failed:", err));
+          .catch(err => console.error("❌ Service Worker registration failed:", err));
       });
     }
   </script>
